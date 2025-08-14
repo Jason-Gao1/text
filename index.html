@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>学效引擎 · AI复习计划生成器（Demo）</title>
+<style>
+  :root{--bg1:#162a6a; --bg2:#6b23c7; --card:#ffffff; --muted:#6b7280; --brand:#3b82f6; --brand2:#8b5cf6;}
+  html,body{margin:0;padding:0;background:linear-gradient(135deg,var(--bg1),var(--bg2));font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'PingFang SC','Noto Sans CJK SC','Microsoft YaHei', Arial;}
+  .wrap{max-width:1100px;margin:0 auto;padding:28px;}
+  .hero{color:#fff;padding:24px 0 10px 0; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+  .title h1{margin:0;font-size:22px;letter-spacing:.5px}
+  .title p{margin:4px 0 0 0;opacity:.9}
+  .card{background:var(--card);border-radius:16px;padding:20px;margin-top:16px; box-shadow:0 10px 30px rgba(0,0,0,.10)}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+  .col-4{grid-column:span 4;} .col-6{grid-column:span 6;} .col-12{grid-column:span 12;}
+  label{font-size:14px;color:#374151;margin-bottom:6px;display:block;}
+  input,select,textarea{width:100%;padding:12px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box; outline:none}
+  .btn{appearance:none;border:0;border-radius:12px;padding:12px 16px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;font-weight:700;cursor:pointer}
+  .btn.secondary{background:#eef2ff;color:#4338ca}
+  .muted{color:var(--muted);font-size:13px}
+  table{width:100%;border-collapse:separate;border-spacing:0 8px}
+  th,td{background:#fff;padding:10px 12px}
+  th{position:sticky;top:0;background:#f8fafc;font-weight:700;color:#334155}
+  tr{border-radius:10px}
+  .tools{display:flex;gap:10px;flex-wrap:wrap}
+  .pill{display:inline-flex;align-items:center;gap:6px;background:#f1f5f9;border-radius:999px;padding:8px 12px;color:#0f172a}
+  .footer{color:#c7d2fe;text-align:center;font-size:12px;margin:22px 0}
+  @media (max-width:800px){ .col-4,.col-6{grid-column:span 12;} .tools{justify-content:space-between} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="logo">学效</div>
+    <div class="title">
+      <h1>AI复习计划生成器（Demo）</h1>
+      <p>用AI和工具，让学习效率翻倍｜学效引擎</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="grid">
+      <div class="col-4"><label>考试类型</label>
+        <select id="examType">
+          <option value="考研">考研</option>
+          <option value="公考">公考</option>
+          <option value="英语">英语</option>
+          <option value="资格证">资格证</option>
+        </select>
+      </div>
+      <div class="col-4"><label>距离考试（天）</label>
+        <input id="daysLeft" type="number" min="7" max="365" value="60"/>
+      </div>
+      <div class="col-4"><label>每天可学习（小时）</label>
+        <input id="hoursPerDay" type="number" min="1" max="16" step="0.5" value="4"/>
+      </div>
+      <div class="col-6"><label>弱项科目（逗号分隔）</label>
+        <input id="weak" placeholder="例如：数学，申论，英语阅读"/>
+      </div>
+      <div class="col-6"><label>每周可学习天数</label>
+        <select id="daysPerWeek">
+          <option value="7">7天</option>
+          <option value="6" selected>6天</option>
+          <option value="5">5天</option>
+        </select>
+      </div>
+      <div class="col-12">
+        <button class="btn" onclick="genPlan()">一键生成计划</button>
+        <span class="muted" id="tip" style="margin-left:10px;">生成后可导出CSV/打印为PDF</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tools">
+      <div class="pill">📅 起始：<span id="startDate"></span></div>
+      <div class="pill">⏱️ 每日：<span id="hrs"></span> 小时</div>
+      <div class="pill">🧩 弱项加权：1.5×</div>
+      <div class="pill">✅ 预览前14天，完整计划可下载</div>
+      <div class="pill"><button class="btn secondary" onclick="downloadCSV()">下载完整CSV</button></div>
+      <div class="pill"><button class="btn secondary" onclick="window.print()">打印/保存PDF</button></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>前14天预览</h3>
+    <div id="tableWrap"></div>
+  </div>
+
+  <div class="footer">© 学效引擎 · Demo 仅展示效果，正式版将接入AI接口与登录</div>
+</div>
+
+<script>
+function chunkSubjects(examType){
+  const pools = {
+    "考研": ["数学","英语","政治","专业课"],
+    "公考": ["行测","申论","常识","资料分析"],
+    "英语": ["词汇","语法","阅读","写作"],
+    "资格证": ["基础知识","法规","案例","实务"]
+  };
+  return pools[examType] || ["综合","练习","错题","复盘"];
+}
+
+function distributeTime(hours, subjects, weakList){
+  const base = subjects.map(s => ({name:s, w: weakList.includes(s)? 1.5:1}));
+  const sum = base.reduce((a,b)=>a+b.w,0);
+  return base.map(x => ({name:x.name, hours: Math.round((hours * x.w / sum)*2)/2 }));
+}
+
+function genPlan(){
+  const examType = document.getElementById('examType').value;
+  const daysLeft = +document.getElementById('daysLeft').value;
+  const hoursPerDay = +document.getElementById('hoursPerDay').value;
+  const daysPerWeek = +document.getElementById('daysPerWeek').value;
+  const weak = document.getElementById('weak').value.replace(/，/g,',').split(',').map(s=>s.trim()).filter(Boolean);
+
+  const subjects = chunkSubjects(examType);
+  const start = new Date();
+  const plan = [];
+  for(let d=0; d<daysLeft; d++){
+    const date = new Date(start.getTime() + d*86400000);
+    const weekday = date.getDay(); // 0 Sun
+    let rest = false;
+    if(daysPerWeek===6){ rest = (weekday===0); }
+    if(daysPerWeek===5){ rest = (weekday===0 || weekday===6); }
+    if(rest){
+      plan.push({date, items:[{name:"休息/轻复盘", hours:0}], tip:"休息日｜轻复盘10-20分钟"});
+      continue;
+    }
+    const items = distributeTime(hoursPerDay, subjects, weak);
+    const tip = ((d+1)%7===0) ? "阶段小测 + 错题回顾" : "";
+    plan.push({date, items, tip});
+  }
+
+  document.getElementById('startDate').textContent = start.toISOString().slice(0,10);
+  document.getElementById('hrs').textContent = hoursPerDay.toString();
+
+  const preview = plan.slice(0,14);
+  const rows = preview.map((row,idx)=>{
+    const ds = row.date.toISOString().slice(0,10);
+    const detail = row.items.map(i=> i.hours>0 ? `${i.name} ${i.hours}h` : i.name).join(' | ');
+    const tip = row.tip || "";
+    return `<tr>
+      <td style="border-radius:10px 0 0 10px">${idx+1}</td>
+      <td>${ds}</td>
+      <td>${detail}</td>
+      <td style="border-radius:0 10px 10px 0;color:#0ea5e9">${tip}</td>
+    </tr>`;
+  }).join("");
+  const table = `<table>
+    <thead><tr><th>#</th><th>日期</th><th>学习安排</th><th>备注</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+  document.getElementById('tableWrap').innerHTML = table;
+
+  window.__fullPlan = {examType, subjects, hoursPerDay, daysLeft, daysPerWeek, weak, plan};
+}
+
+function downloadCSV(){
+  if(!window.__fullPlan){ alert("请先生成计划"); return; }
+  const {plan, examType} = window.__fullPlan;
+  const header = ["序号","日期","安排","备注"];
+  const lines = [header.join(",")];
+  plan.forEach((r,i)=>{
+    const ds = r.date.toISOString().slice(0,10);
+    const detail = r.items.map(it => it.hours>0 ? `${it.name} ${it.hours}h` : it.name).join(" | ");
+    const tip = r.tip || "";
+    lines.push([i+1, ds, detail, tip].map(x=>`"${x}"`).join(","));
+  });
+  const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8;"});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `学效引擎_复习计划_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+window.addEventListener('load', genPlan);
+</script>
+</body>
+</html>
