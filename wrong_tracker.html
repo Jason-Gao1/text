@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>学效引擎 · 高频错题追踪表（Demo）</title>
+<style>
+  :root{--bg1:#0b1b47; --bg2:#5b21b6; --card:#ffffff; --muted:#6b7280; --brand:#2563eb; --brand2:#7c3aed;}
+  html,body{margin:0;padding:0;background:linear-gradient(135deg,var(--bg1),var(--bg2));font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue','PingFang SC','Noto Sans CJK SC','Microsoft YaHei',Arial;color:#101828}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px}
+  .hero{color:#fff;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:6px 0 8px}
+  .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+  .title h1{margin:0;font-size:22px;letter-spacing:.5px}
+  .title p{margin:4px 0 0 0;opacity:.9}
+  .card{background:var(--card);border-radius:16px;padding:18px;margin-top:14px; box-shadow:0 10px 30px rgba(0,0,0,.10)}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+  .col-3{grid-column:span 3} .col-4{grid-column:span 4} .col-6{grid-column:span 6} .col-8{grid-column:span 8} .col-12{grid-column:span 12}
+  label{font-size:14px;color:#374151;margin-bottom:6px;display:block}
+  input,select,textarea{width:100%;padding:11px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none}
+  textarea{min-height:56px;resize:vertical}
+  .btn{appearance:none;border:0;border-radius:12px;padding:12px 16px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;font-weight:700;cursor:pointer}
+  .btn.secondary{background:#eef2ff;color:#4338ca}
+  table{width:100%;border-collapse:separate;border-spacing:0 8px}
+  th,td{background:#fff;padding:10px 12px;vertical-align:top}
+  th{position:sticky;top:0;background:#f8fafc;font-weight:700;color:#334155}
+  tr{border-radius:10px}
+  .tools{display:flex;gap:10px;flex-wrap:wrap}
+  .pill{display:inline-flex;align-items:center;gap:6px;background:#f1f5f9;border-radius:999px;padding:8px 12px;color:#0f172a}
+  .footer{color:#c7d2fe;text-align:center;font-size:12px;margin:20px 0}
+  .hint{font-size:12px;color:#6b7280;margin-top:6px}
+  .tag{display:inline-block;background:#ecfeff;border:1px solid #06b6d4;color:#0e7490;border-radius:999px;padding:2px 8px;margin:1px;font-size:12px}
+  .status{font-size:12px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .row>*{flex:1 1 120px}
+  @media (max-width:900px){ .col-3,.col-4,.col-6,.col-8{grid-column:span 12} .tools{justify-content:space-between} table{font-size:14px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="logo">错题</div>
+    <div class="title">
+      <h1>高频错题追踪表（Demo）</h1>
+      <p>自动分类错因、安排回炉复习｜学效引擎</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="grid">
+      <div class="col-3"><label>科目</label>
+        <input id="subject" placeholder="数学/行测/英语/专业课"/>
+      </div>
+      <div class="col-3"><label>专题</label>
+        <input id="topic" placeholder="极限/概率/资料分析"/>
+      </div>
+      <div class="col-3"><label>错误类型</label>
+        <select id="errType">
+          <option>概念混淆</option>
+          <option>审题失误</option>
+          <option>计算失误</option>
+          <option>粗心大意</option>
+          <option>时间不够</option>
+        </select>
+      </div>
+      <div class="col-3"><label>难度</label>
+        <select id="level">
+          <option>容易</option>
+          <option selected>中等</option>
+          <option>困难</option>
+        </select>
+      </div>
+
+      <div class="col-6"><label>题干/截图链接</label>
+        <input id="qref" placeholder="可粘贴题干摘要或图床链接"/>
+      </div>
+      <div class="col-6"><label>正确思路（简述）</label>
+        <input id="solution" placeholder="解题关键步骤/公式"/>
+      </div>
+
+      <div class="col-6"><label>错因分析</label>
+        <textarea id="cause" placeholder="为什么错？遗漏条件/误用公式/概念不清/读题偏差等"></textarea>
+      </div>
+      <div class="col-6"><label>标签（逗号分隔）</label>
+        <input id="tags" placeholder="如：极限, 洛必达, 不定式"/>
+      </div>
+
+      <div class="col-4"><label>首次记录日期</label>
+        <input id="firstDate" type="date" />
+      </div>
+      <div class="col-4"><label>复习间隔方案</label>
+        <select id="preset">
+          <option value="1,3,7,14,30">标准：1,3,7,14,30</option>
+          <option value="1,2,4,7,15,30">密集：1,2,4,7,15,30</option>
+          <option value="2,5,10,20,40">宽松：2,5,10,20,40</option>
+        </select>
+      </div>
+      <div class="col-4"><label>状态</label>
+        <select id="status">
+          <option>待复盘</option>
+          <option selected>学习中</option>
+          <option>已掌握</option>
+        </select>
+      </div>
+
+      <div class="col-12">
+        <div class="row">
+          <button class="btn" onclick="addItem()">添加错题</button>
+          <button class="btn secondary" onclick="downloadCSV()">下载CSV</button>
+          <button class="btn secondary" onclick="window.print()">打印/保存PDF</button>
+          <button class="btn secondary" onclick="clearAll()">清空（本地）</button>
+        </div>
+        <div class="hint">数据存储在你的浏览器本地（localStorage），不联网；如需云端同步，可后续接入账号系统。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tools">
+      <div class="pill">📊 条目数：<span id="countOut">0</span></div>
+      <div class="pill">🧩 今日需复习：<span id="dueOut">0</span></div>
+      <div class="pill">🔎 筛选：
+        <select id="filterSubject" onchange="render()"><option value="">全部科目</option></select>
+        <select id="filterStatus" onchange="render()">
+          <option value="">全部状态</option>
+          <option>待复盘</option><option>学习中</option><option>已掌握</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>错题列表（按“下次复习日”排序）</h3>
+    <div id="tableWrap"></div>
+  </div>
+
+  <div class="footer">© 学效引擎 · Demo 仅做功能展示，正式版将接入AI判定错因、自动抽取知识点</div>
+</div>
+
+<script>
+const KEY = 'xxyq_wrong_items_v1';
+
+function todayStr(){ const d=new Date(); const y=d.getFullYear(), m=('0'+(d.getMonth()+1)).slice(-2), dd=('0'+d.getDate()).slice(-2); return `${y}-${m}-${dd}`; }
+function addDays(ds, n){ const [y,m,d]=ds.split('-').map(Number); const dt=new Date(y, m-1, d); dt.setDate(dt.getDate()+n); const mm=('0'+(dt.getMonth()+1)).slice(-2), dd=('0'+dt.getDate()).slice(-2); return `${dt.getFullYear()}-${mm}-${dd}`; }
+
+function getIntervals(){
+  const p = document.getElementById('preset').value;
+  return p.split(',').map(x=>+x);
+}
+
+function loadItems(){
+  try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }catch(e){ return []; }
+}
+function saveItems(items){ localStorage.setItem(KEY, JSON.stringify(items)); }
+
+function addItem(){
+  const subject = document.getElementById('subject').value.trim();
+  const topic   = document.getElementById('topic').value.trim();
+  const errType = document.getElementById('errType').value;
+  const level   = document.getElementById('level').value;
+  const qref    = document.getElementById('qref').value.trim();
+  const solution= document.getElementById('solution').value.trim();
+  const cause   = document.getElementById('cause').value.trim();
+  const tags    = document.getElementById('tags').value.replace(/，/g,',').split(',').map(s=>s.trim()).filter(Boolean);
+  let firstDate = document.getElementById('firstDate').value || todayStr();
+  const status  = document.getElementById('status').value;
+  const intervals = getIntervals();
+
+  if(!subject || !topic){ alert('请填写“科目”和“专题”'); return; }
+
+  const reviews = intervals.map((d,i)=> addDays(firstDate, d));
+  const item = {id: Date.now(), subject, topic, errType, level, qref, solution, cause, tags, firstDate, status, intervals, reviews, nextReview: reviews[0]||firstDate, reviewIndex:0, done:false};
+  const items = loadItems();
+  items.push(item);
+  saveItems(items);
+  clearInputs();
+  render();
+}
+
+function clearInputs(){
+  ['subject','topic','qref','solution','cause','tags'].forEach(id=> document.getElementById(id).value='');
+  document.getElementById('firstDate').value = '';
+}
+
+function clearAll(){
+  if(confirm('确认清空本地所有错题记录？此操作不可撤回。')){
+    localStorage.removeItem(KEY);
+    render();
+  }
+}
+
+function nextReviewBadge(item){
+  const due = item.nextReview || '';
+  const t = todayStr();
+  let color = '#0ea5e9', text = '计划中';
+  if(due === t){ color = '#16a34a'; text = '今日复习'; }
+  else if(due < t){ color = '#dc2626'; text = '已逾期'; }
+  return `<span class="status" style="color:${color}">${text}：${due||'-'}</span>`;
+}
+
+function doReview(id, mastered=false){
+  const items = loadItems();
+  const idx = items.findIndex(x=>x.id===id);
+  if(idx<0) return;
+  const it = items[idx];
+  if(mastered){
+    it.status = '已掌握';
+    it.done = true;
+    it.nextReview = '';
+  }else{
+    const i = (it.reviewIndex||0) + 1;
+    if(i >= it.intervals.length){
+      it.status = '已掌握';
+      it.done = true;
+      it.nextReview = '';
+    }else{
+      it.reviewIndex = i;
+      it.nextReview = it.reviews[i];
+      it.status = '学习中';
+    }
+  }
+  items[idx] = it;
+  saveItems(items);
+  render();
+}
+
+function render(){
+  const items = loadItems();
+  const fs = document.getElementById('filterSubject').value;
+  const fst = document.getElementById('filterStatus').value;
+  const filtered = items.filter(x=> (!fs || x.subject===fs) && (!fst || x.status===fst));
+
+  const subjects = Array.from(new Set(items.map(x=>x.subject).filter(Boolean))).sort();
+  const sel = document.getElementById('filterSubject');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">全部科目</option>' + subjects.map(s=> `<option ${s===current?'selected':''}>${s}</option>`).join('');
+
+  document.getElementById('countOut').textContent = items.length;
+  const today = todayStr();
+  document.getElementById('dueOut').textContent = items.filter(x=> x.nextReview && x.nextReview <= today && !x.done).length;
+
+  filtered.sort((a,b)=> (a.nextReview||'9999') < (b.nextReview||'9999') ? -1 : 1);
+
+  const rows = filtered.map((it,i)=>{
+    const tags = (it.tags||[]).map(t=> `<span class='tag'>#${t}</span>`).join(' ');
+    return `<tr>
+      <td style="border-radius:10px 0 0 10px">${i+1}</td>
+      <td><div>${it.subject}</div><div class="muted">${it.topic}</div></td>
+      <td>${it.errType}<br/><span class="muted">${it.level}</span></td>
+      <td style="word-break:break-all">${it.qref||'-'}</td>
+      <td style="word-break:break-all">${it.cause||'-'}</td>
+      <td style="word-break:break-all">${it.solution||'-'}</td>
+      <td>${tags||'-'}</td>
+      <td>${nextReviewBadge(it)}</td>
+      <td style="border-radius:0 10px 10px 0">
+        <button class="btn" onclick="doReview(${it.id}, false)">复习完成</button>
+        <div style="height:6px"></div>
+        <button class="btn secondary" onclick="doReview(${it.id}, true)">标记掌握</button>
+      </td>
+    </tr>`;
+  }).join("");
+
+  document.getElementById('tableWrap').innerHTML = `<table>
+    <thead><tr>
+      <th>#</th><th>科目/专题</th><th>类型/难度</th><th>题干/链接</th>
+      <th>错因分析</th><th>正确思路</th><th>标签</th><th>下次复习</th><th>操作</th>
+    </tr></thead>
+    <tbody>${rows||'<tr><td colspan="9" style="text-align:center;background:#fafafa">暂无数据，先在上方添加一条吧</td></tr>'}</tbody>
+  </table>`;
+}
+
+window.addEventListener('load', ()=>{
+  const fd = document.getElementById('firstDate');
+  const t = new Date(); const y=t.getFullYear(), m=('0'+(t.getMonth()+1)).slice(-2), d=('0'+t.getDate()).slice(-2);
+  fd.value = `${y}-${m}-${d}`;
+  render();
+});
+
+function downloadCSV(){
+  const items = loadItems();
+  const header = ["科目","专题","错误类型","难度","题干/链接","错因分析","正确思路","标签","首次日期","下次复习","状态"];
+  const lines = [header.join(",")];
+  items.forEach(it=>{
+    const row = [
+      it.subject, it.topic, it.errType, it.level, it.qref||"", it.cause||"", it.solution||"",
+      (it.tags||[]).join('|'), it.firstDate||"", it.nextReview||"", it.status||""
+    ].map(x=> `"${(x||'').replace(/"/g,'""')}"`);
+    lines.push(row.join(","));
+  });
+  const blob = new Blob([lines.join('\n')], {type:"text/csv;charset=utf-8;"});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `学效引擎_高频错题追踪_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+</script>
+</body>
+</html>
